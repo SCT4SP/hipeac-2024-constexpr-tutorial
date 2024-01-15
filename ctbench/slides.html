@@ -1,0 +1,302 @@
+<!------------------------------------------------------------------------------------------------->
+<!--
+  Copyright 2020 Joel Falcou
+  Licensed under the terms of the Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)
+-->
+<!------------------------------------------------------------------------------------------------->
+
+<meta charset="utf-8" lang="en">
+<!------------------------------------------------------------------------------------------------->
+
+**ctbench - Compile-Time Benchmarking**
+<br>
+<br>
+   Jules Pénuchot
+<br>
+<small><em><span class="current-date"></span></em></small>
+<br>
+PhD Student
+Parallel Systems, LISN, Paris-Saclay University
+<br>
+<center><small>![](images/lisn.svg style="height: 3rem")</small></center>
+<center>![](images/ccby40.png style="height: 0.7rem")</center>
+<small><small>Powered by Markdeep and Markdeep-Slides</small></small>
+
+---
+
+## Metaprogramming is evolving
+
+### Support libraries
+
+  * Boost.Mpl
+  * Boost.Fusion
+  * Boost.Hana
+  * Boost.Mp11
+  * Brigand
+  * *that code snippet repository you probably own*
+
+### Applications
+
+  * Eigen - https://eigen.tuxfamily.org/
+  * Blaze - https://bitbucket.org/blaze-lib/blaze
+  * CTRE - https://github.com/hanickadot/compile-time-regular-expressions
+  * CTPG - https://github.com/peter-winter/ctpg
+
+---
+
+## Metaprogramming lacks tooling
+
+### Metaprogramming is *almost* on par with regular programing...
+
+* ...but regular programming has debuggers, profilers,
+* We know how to benchmark it to get **meaningful**, quantitative results,
+* No such process for meta-programs,
+* Little to no **science** behind compile time rule of thumbs.
+* **We need a sane process for understanding compile times**.
+
+### How to measure compile times?
+  * Templight, *Zoltán Borók-Nagy, Zoltán Porkoláb, and József Mihalicza* (2009)
+  * Metabench, *Louis Dionne and Bruno Dutra* (2016)
+  * Build-Bench, *Fred Tingaud* (2017)
+  * Clang time-trace & Clang Build Analyzer, *Aras Pranckevičius* (2019)
+
+---
+
+# Introducing ctbench
+
+---
+
+## What is ctbench?
+
+https://github.com/jpenuchot/ctbench
+
+* Compile time benchmarking & **data analysis** tool for Clang,
+* built on-top of **time-trace**,
+* **repeatability** & accuracy in mind,
+* **variable size** benchmarks,
+* C++ developer friendly:
+  - C++ only benchmark files,
+  - CMake API,
+  - JSON config files (with a few ones already provided)
+
+*But how does it work?*
+
+---
+
+## Benchmarking methodology
+
+- Benchmark set:
+  * collection of benchmark cases to compare
+- Benchmark case:
+  * compilable C++ file,
+  * compiled several times for a given **range of sizes**,
+  * benchmark **iteration size** passed as a preprocessor define
+- Benchmark iteration:
+  * terminology for a benchmark case compiled with a **given size**,
+  * **several samples** for each iteration size for improved accuracy
+- Sample:
+  * **one** time-trace file
+
+-> Benchmark set -> Benchmark cases -> Benchmark iterations -> Samples
+
+---
+
+## Benchmark case
+
+### Recursive sum
+* *ctbench* defines `BENCHMARK_SIZE` for each iteration size.
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// Metaprogram to benchmark:
+template <unsigned N> struct ct_uint_t { static constexpr unsigned value = N; };
+
+template <typename T> auto sum(T const &) { return T::value; }
+template <typename T, typename... Ts> auto sum(T const &, Ts const &...tl) {
+  return T::value + sum(tl...);
+}
+
+// Benchmark driver:
+#include <boost/preprocessor/repetition/enum.hpp>
+#define GEN_MACRO(Z, N, TEXT) TEXT<N> {}
+unsigned foo() {
+  // return sum(ct_uint_t<1>{}, ..., ct_uint_t<BENCHMARK_SIZE>{});
+  return sum(BOOST_PP_ENUM(BENCHMARK_SIZE, GEN_MACRO, ct_uint_t));
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Benchmark case
+
+### Expansion sum
+* *ctbench* defines `BENCHMARK_SIZE` for each iteration size.
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// Metaprogram to benchmark:
+template <unsigned N> struct ct_uint_t { static constexpr unsigned value = N; };
+
+template <typename... Ts> auto sum(Ts const &...) { return (Ts::value + ...); }
+
+// Benchmark driver:
+#include <boost/preprocessor/repetition/enum.hpp>
+#define GEN_MACRO(Z, N, TEXT) TEXT<N> {}
+unsigned foo() {
+  // return sum(ct_uint_t<1>{}, ..., ct_uint_t<BENCHMARK_SIZE>{});
+  return sum(BOOST_PP_ENUM(BENCHMARK_SIZE, GEN_MACRO, ct_uint_t));
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+
+---
+
+## CMake API
+
+* Benchmark declaration
+
+```CMake
+ctbench_add_benchmark(variadic_sum.recursive  # Target name
+  variadic_sum/recursive.cpp                  # Benchmark file
+  1 32 1                                      # Start, stop, and step
+  10)                                         # Number of repetitions
+```
+
+* Graph declaration
+
+```CMake
+ctbench_add_graph(variadic_sum-graph  # Target name
+  configs/feature_comparison.json     # Config file
+  variadic_sum.expansion              # Benchmark target
+  variadic_sum.recursive)             # ...
+```
+
+* Optional: Bring your own flags with `ctbench_add_custom_benchmark`
+
+---
+
+# Sample benchmarks
+
+---
+
+## C++ contenders
+
+### Function selection
+ * **enable_if_t**, **enable_if**
+ * **if constexpr**
+ * **requires**
+
+<center>![](cpp-contenders/function_selection/ExecuteCompiler.png)<br/> *Targeted data: ExecuteCompiler*</center>
+
+---
+
+## C++ contenders
+
+### Function selection
+ * **enable_if_t**, **enable_if**
+ * **if constexpr**
+ * **requires**
+
+<center>![](cpp-contenders/function_selection/Frontend.png)<br/> *Targeted data: Frontend*</center>
+
+---
+
+## C++ contenders
+
+### Function selection
+ * **enable_if_t**, **enable_if**
+ * **if constexpr**
+ * **requires**
+
+<center>![](cpp-contenders/function_selection/Backend.png)<br/> *Targeted data: Backend*</center>
+
+---
+
+## C++ contenders
+
+### **Variadic sum**
+ * **recursive**
+ * **fold_expression**
+
+<center>![](cpp-contenders/variadic_sum/ExecuteCompiler.png)<br/> *Targeted data: ExecuteCompiler*</center>
+
+---
+
+## C++ contenders
+
+### **Variadic sum**
+ * **recursive**
+ * **fold_expression**
+
+<center>![](cpp-contenders/variadic_sum/Frontend.png)<br/> *Targeted data: Frontend*</center>
+
+---
+
+## C++ contenders
+
+### **Variadic sum**
+ * **recursive**
+ * **fold_expression**
+
+<center>![](cpp-contenders/variadic_sum/Backend.png)<br/> *Targeted data: Backend*</center>
+
+---
+
+# Conclusion
+
+---
+
+## Project overview
+
+* CMake API
+  * **`benchmarking.cmake`** declares the end-user API,
+  * Documentation is provided inside (easily extracted into a MD file)
+
+* **`grapher`** subproject (meatiest part)
+  * CLI, time-trace file reading, predicate engine, and plotting,
+  * Designed as a **library** + CLI drivers,
+  * relies heavily on **Sciplot** (https://github.com/Sciplot/Sciplot),
+  * new plotters can be written easily
+
+* Tooling:
+  * **`time-trace-wrapper`**: `clang` exec wrapper to extract time-trace files
+  * **`cmake-doc-extractor`**: extracts the API doc into a MD file
+
+---
+
+# Thanks for your attention !
+
+<!------------------------------------------------------------------------------------------------->
+<!-- Markdeep slides stuff -->
+<script>
+    markdeepSlidesOptions = {
+        aspectRatio: 16 / 9,
+        theme: 'reckons',
+        fontSize: 22,
+        diagramZoom: 1.0,
+        totalSlideNumber: true,
+        progressBar: true,
+        breakOnHeadings: false,
+        slideChangeHook: (oldSlide, newSlide) => {},
+        modeChangeHook: (newMode) => {}
+    };
+</script>
+<link rel="stylesheet" href="markdeep-slides/lib/markdeep-relative-sizes/1.09/relativize.css">
+<link rel="stylesheet" href="markdeep-slides/markdeep-slides.css">
+<script src="markdeep-slides/markdeep-slides.js"></script>
+
+<!-- Markdeep stuff -->
+<script>
+    markdeepOptions = {
+        tocStyle: 'none',
+        detectMath: false,
+        onLoad: function() {
+            initSlides();
+        }
+    };
+</script>
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep-slides/lib/markdeep/1.09/markdeep.min.js" charset="utf-8"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
