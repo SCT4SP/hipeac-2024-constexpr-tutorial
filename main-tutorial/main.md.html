@@ -31,9 +31,9 @@ Joel FALCOU
   * *Zero Cost Abstractions*.
   * C++ carved a piece of the HPC landscape for itself.
 
-### Compile-time: An untapped ressources
+### Compile-time: An untapped ressource
   * Some elements of programs are fully known at compile time but yet computed at runtime.
-  * Moving those computations at an earlier stage leads to better performances.
+  * Moving those computations at an earlier stage leads to better performance.
   * How can we find out those opportunities?
   * How can we express these code fragments in a meaningful way?
 
@@ -247,7 +247,7 @@ auto sz = largest_size<int,char,char[9],void*,float>();
 
 ### C++11/14 - Variables as `constexpr` entity ([Demo](https://godbolt.org/z/o76K6WY8b))
   * Variable can be defined as `constexpr`.
-  * They can be either used are regular variable or in other `constexpr` contexts.
+  * They can be either used as regular variable or in other `constexpr` contexts.
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
@@ -267,7 +267,7 @@ constexpr auto sz = largest_size<int,char,char[9],void*,float>();
 
 ## `constexpr` Variables
 
-### C++17 - Functions as Traits ([Demo](https://godbolt.org/z/a1TjoGWTq))
+### C++17 - Functions as Traits - Take II ([Demo](https://godbolt.org/z/a1TjoGWTq))
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
@@ -380,7 +380,7 @@ std::enable_if<!std::is_trivially_copyable_v<T>> copy(T const* src, T* dst, int 
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<typename T> void copy(T const* src, T* dst, int n, std::true_type)
+template<typename T> void copy(T const* src, T* dst, int n)
 {
   if constexpr(std::is_trivially_copyable_v<T>)
   {
