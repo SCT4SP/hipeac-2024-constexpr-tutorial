@@ -14,3 +14,10 @@ University of the West of Scotland, Paisley, UK
 
 The HiPEAC page for the tutorial is
 [here](https://www.hipeac.net/2024/munich/#/program/sessions/8094).
+
+FINAL EXAMPLE:
+  * Physics: https://godbolt.org/z/hzzrnTzeb
+
+EXERCISE :
+  * Type reordering : https://godbolt.org/z/W61vanzMP
+  * Type lists : https://godbolt.org/z/5s81K4rMs
