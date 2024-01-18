@@ -21,3 +21,7 @@ FINAL EXAMPLE:
 EXERCISE :
   * Type reordering : https://godbolt.org/z/W61vanzMP
   * Type lists : https://godbolt.org/z/5s81K4rMs
+
+SOLUTIONS:
+  * Type reordering : https://godbolt.org/z/P1z14Ev3c
+  * Type list: https://godbolt.org/z/Kxd4b5eoa
